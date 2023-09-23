@@ -2,6 +2,17 @@
 
 ### This is an example of extending the images.
 
+### HINTS
+### Sometimes you can get building errors related to cache handling.
+### One of the following usually helps:
+### (1) Use the '--no-cache' option
+###     > docker build ... --no-cache
+### (2) Purge the builder cache before and/or between builds
+###     > docker builder prune
+### (3) Re-open the terminal and/or Visual Studio Code
+### (4) Remove the line containing 'rm -rf /var/lib/apt/lists/*'
+###     from your extending Dockerfile (like this one)
+
 ### choose a base image and tag
 ARG BASEIMAGE="accetto/ubuntu-vnc-xfce-g3"
 # ARG BASEIMAGE="accetto/ubuntu-vnc-xfce-chromium-g3"
@@ -27,9 +38,13 @@ RUN \
 # COPY ./bashrc "${HOME}"/.bashrc
 # COPY ./firefox.plus/user.js "${HOME}"/firefox.plus/
 
+### avoid the pitfall of failing startup under some circumstances
+### permissions will be set to the system defaults on the first container start
+RUN chmod 666 /etc/passwd /etc/group
+
 ### usually you want to swich back to a non-root user
 ### alternatively you can do it in a compose file (see 'example.yml')
-USER 1000
+USER "${HEADLESS_USER_ID}"
 
 ### note that some applications refuse to be installed under the root user
 ### those you have to install after switching the user

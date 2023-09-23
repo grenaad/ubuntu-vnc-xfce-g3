@@ -61,6 +61,31 @@ execute_command() {
     fi
 }
 
+envv_override() {
+
+    local envv_override_file="${HOME}"/.override/.override_envv.rc
+    local tmp=""
+
+    ### only if the file is not empty
+    if [[ -s "${envv_override_file}" ]] ; then
+
+        tmp=$( mktemp )
+
+        ### only lines that begin with 'export ' and contain '='
+        ( grep -E '^export\s[^=]+[=]{1}' "${envv_override_file}" 2>/dev/null 1>"${tmp}" )
+
+        if [[ "${_verbose}" == "1" ]] ; then
+
+            echo "Sourcing from file '${envv_override_file}'"
+            cat "${tmp}"
+            echo "End of file '${envv_override_file}'"
+        fi
+
+        source "${tmp}"
+        rm -f "${tmp}"
+    fi
+}
+
 main() {
 
     ### option interdependencies
@@ -72,6 +97,11 @@ main() {
     if [[ "${_arg_skip_vnc}" == "on" ]] ; then
 
         _arg_skip_novnc="on"
+    fi
+
+    if [[ "${_verbose}" == "1" ]] ; then
+
+        echo -e "\nContainer '$(hostname)' started @$(date -u +'%Y-%m-%d_%H-%M-%S')"
     fi
 
     ### option "--debug"
@@ -87,8 +117,17 @@ main() {
         echo "ls -la ." ; ls -la .
     fi
 
+    ### override environment variables only if enabled
+    if [[ "${FEATURES_OVERRIDING_ENVV}" == "1" ]] ; then
+    
+        envv_override
+    fi
+
     ### create container user
-    generate_container_user
+    if [[ -s "${STARTUPDIR}"/.initial_sudo_password ]] ; then
+    
+        generate_container_user
+    fi
 
     if [[ "$?" != "0" ]] ; then
 

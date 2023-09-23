@@ -44,6 +44,7 @@ RUN \
     --mount=type=cache,from=stage_cache,sharing=locked,source=/var/cache/apt,target=/var/cache/apt \
     --mount=type=cache,from=stage_cache,sharing=locked,source=/var/lib/apt,target=/var/lib/apt \
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
+        gettext-base \
         gir1.2-rsvg-2.0 \
         gpg \
         jq \
@@ -341,7 +342,7 @@ COPY ./xfce-firefox/src/firefox.plus/home/readme*.md "${HOME}"/
 
 RUN \
     chmod 744 "${HOME}"/firefox.plus/*.sh \
-    && echo "Exec=${HOME}/firefox.plus/copy_firefox_user_preferences.sh" >> "${HOME}/Desktop/Copy FF Preferences.desktop" \
+    && envsubst <"${HOME}/Desktop/Copy FF Preferences.desktop" >/tmp/esub.tmp && mv -f /tmp/esub.tmp "${HOME}/Desktop/Copy FF Preferences.desktop" \
     && install -o root -g root -m 644 "${HOME}"/firefox.plus/accetto.svg /usr/share/icons/hicolor/scalable/apps/ \
     && gtk-update-icon-cache -f /usr/share/icons/hicolor
 
@@ -358,9 +359,11 @@ FROM ${ARG_MERGE_STAGE_BROWSER_BASE} as merge_stage_browser
 ###############
 
 FROM ${ARG_FINAL_STAGE_BASE} as stage_final
+ARG ARG_FEATURES_OVERRIDING_ENVV
 ARG ARG_SUDO_INITIAL_PW
 
 ENV \
+    FEATURES_OVERRIDING_ENVV="${ARG_FEATURES_OVERRIDING_ENVV:+1}" \
     FEATURES_VERSION_STICKER=1 \
     STARTUPDIR="/dockerstartup"
 
@@ -374,17 +377,19 @@ COPY ./xfce/src/home/readme*.md "${HOME}"/
 ### Note that the line 'chmod 666 /etc/passwd /etc/group' sets the "softer" permissions only temporary.
 ### It allows the user generator startup script to configure the user and the group correctly.
 ### The script will set the permissions of both files back to the default '644'.
-### The script will aslo delete the file '.initial_sudo_password' after using it.
-### However, note that the initial sudo password will be persisted in the image history.
+### The script will also clear the file '.initial_sudo_password' after using it.
+### However, note that the initial sudo password will still be persisted in the image history.
 ### You have to change it inside the container, if you want to keep it really secret.
 ### Note that all this will not be done, if the startup script will not be executed.
 RUN \
     chmod 666 /etc/passwd /etc/group \
+    &&  echo "${HEADLESS_USER_GROUP_NAME}:x:${HEADLESS_USER_GROUP_ID}:" >> /etc/group \
     &&  echo "${HEADLESS_USER_NAME}:x:${HEADLESS_USER_ID}:${HEADLESS_USER_GROUP_ID}:Default:${HOME}:/bin/bash" >> /etc/passwd \
     &&  echo "${HEADLESS_USER_NAME}  ALL=(ALL:ALL) ALL" | sudo tee /etc/sudoers.d/"${HEADLESS_USER_NAME}" \
-    &&  echo "${ARG_SUDO_INITIAL_PW:-headless}" > "${HOME}"/.initial_sudo_password \
-    &&  echo "${HEADLESS_USER_NAME}:$(cat "${HOME}"/.initial_sudo_password)" | chpasswd \
+    &&  echo "${ARG_SUDO_INITIAL_PW:-headless}" > "${STARTUPDIR}"/.initial_sudo_password \
+    &&  echo "${HEADLESS_USER_NAME}:$(cat "${STARTUPDIR}"/.initial_sudo_password)" | chpasswd \
     &&  ln -s "${HOME}"/readme.md "${HOME}"/Desktop/README \
+    &&  envsubst <"${HOME}"/Desktop/versionsticker.desktop >/tmp/esub.tmp && mv -f /tmp/esub.tmp "${HOME}"/Desktop/versionsticker.desktop \
     && "${STARTUPDIR}"/set_user_permissions.sh "${STARTUPDIR}" "${HOME}"
 
 USER "${HEADLESS_USER_ID}"

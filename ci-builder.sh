@@ -253,6 +253,7 @@ main() {
         help | --help | -h )
         
             show_unlogged_help
+            return 0
             ;;
 
         log )
@@ -288,31 +289,31 @@ main() {
                         pivotal )
 
                             clear_log
-                            build_group "${command}" "latest" "latest-chromium" "latest-firefox" "focal" "focal-chromium" "focal-firefox"
+                            build_group "${command}" "latest" "focal" "latest-firefox" "focal-firefox" "latest-chromium" "focal-chromium"
                             ;;
                         
                         complete )
 
                             clear_log
-                            build_group "${command}" "latest" "latest-chromium" "latest-firefox" "focal" "focal-chromium" "focal-firefox"
+                            build_group "${command}" "latest" "focal" "latest-firefox" "focal-firefox" "latest-chromium" "focal-chromium"
                             ;;
 
                         complete-latest )
 
                             clear_log
-                            build_group "${command}" "latest" "latest-chromium" "latest-firefox"
+                            build_group "${command}" "latest" "latest-firefox" "latest-chromium"
                             ;;
 
                         complete-jammy )
 
                             clear_log
-                            build_group "${command}" "jammy" "jammy-chromium" "jammy-firefox"
+                            build_group "${command}" "jammy" "jammy-firefox" "jammy-chromium"
                             ;;
 
                         complete-focal )
 
                             clear_log
-                            build_group "${command}" "focal" "focal-chromium" "focal-firefox"
+                            build_group "${command}" "focal" "focal-firefox" "focal-chromium"
                             ;;
 
                         complete-chromium )
@@ -349,11 +350,11 @@ main() {
                             clear_log
 
                             build_family "${command}" "latest"
-                            build_family "${command}" "latest-chromium"
-                            build_family "${command}" "latest-firefox"
                             build_family "${command}" "focal"
-                            build_family "${command}" "focal-chromium"
+                            build_family "${command}" "latest-firefox"
                             build_family "${command}" "focal-firefox"
+                            build_family "${command}" "latest-chromium"
+                            build_family "${command}" "focal-chromium"
                             ;;
 
                         latest | latest-chromium | latest-firefox \
